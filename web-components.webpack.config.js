@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
-  mode: 'production',
+  mode: 'development',
   entry: './src/web-components/index.ts',
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],

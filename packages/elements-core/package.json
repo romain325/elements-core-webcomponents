@@ -33,6 +33,7 @@
     "build": "yarn build.react",
     "postbuild": "yarn build.styles",
     "build.react": "sl-scripts bundle",
+    "build.webcomponents": "webpack -c ./web-components.config.js",
     "build.styles": "postcss src/styles.css -o dist/styles.min.css && cp src/core.css dist",
     "build.docs": "storybook build -o dist-storybook",
     "commit": "git-cz",
