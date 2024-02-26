@@ -1,20 +1,20 @@
 {
-  "name": "@stoplight/elements-core",
-  "version": "8.0.3",
+  "name": "@romain325/elements-core-webcomponents",
+  "version": "0.0.0",
   "sideEffects": [
     "web-components.min.js",
     "src/web-components/**",
     "**/*.css"
   ],
-  "homepage": "https://github.com/stoplightio/elements",
-  "bugs": "https://github.com/stoplightio/elements/issues",
-  "author": "Stoplight <support@stoplight.io>",
+  "homepage": "https://github.com/romain325/elements",
+  "bugs": "https://github.com/romain325/elements/issues",
+  "author": "Romain OLIVIER <romainolivier42@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stoplightio/elements"
+    "url": "https://github.com/romain325/elements"
   },
   "license": "Apache-2.0",
-  "type": "commonjs",
+  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.esm.js",
   "exports": {

@@ -5,12 +5,20 @@
 [![NPM Downloads][circle_ci_image]][npm]
 [![Stoplight Forest](https://img.shields.io/ecologi/trees/stoplightinc)][stoplight_forest]
 
+# Fork
+
+This is a fork of [https://github.com/stoplightio/elements] with the goal to provide "elements-core" as web-components
+A big thanks to the creator and maintainor of the original project
+
+---
+
 Beautiful API documentation powered by OpenAPI and Markdown. Use these UI components to create API reference documentation, or more complete documentation with Markdown articles covering tutorials, how-to guides, etc.
 
 Available as React Components, or Web Components, you can use Elements all together to build beautiful three-column "Stripe-esque" documentation, or stacked documentation thats easier for integrating into existing Content Management Systems with their own navigation.
 
 # Overview
 
+- [Fork](#fork)
 - [Overview](#overview)
   - [📖 Community](#-community)
   - [👁️🗨 ️️Examples](#️-️️examples)
