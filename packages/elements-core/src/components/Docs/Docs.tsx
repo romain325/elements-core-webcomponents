@@ -1,3 +1,4 @@
+import { SchemaNode } from '@stoplight/json-schema-tree';
 import type { NodeHasChangedFn, NodeType } from '@stoplight/types';
 import { Location } from 'history';
 import * as React from 'react';
@@ -14,6 +15,22 @@ import { ExportButtonProps } from './HttpService/ExportButton';
 import { Model } from './Model';
 
 type NodeUnsupportedFn = (err: 'dataEmpty' | 'invalidType' | Error) => void;
+
+export type VendorExtensionsData = Record<string, unknown>;
+
+/**
+ * A set of props that are passed to the extension renderer
+ */
+export type ExtensionRowProps = {
+  schemaNode: SchemaNode;
+  nestingLevel: number;
+  vendorExtensions: VendorExtensionsData;
+};
+
+/**
+ * Renderer function for rendering an vendor extension
+ */
+export type ExtensionAddonRenderer = (props: ExtensionRowProps) => React.ReactNode;
 
 interface BaseDocsProps {
   /**
@@ -70,7 +87,11 @@ interface BaseDocsProps {
      * @default false
      */
     hideTryIt?: boolean;
-
+    /**
+     * Allows to hide RequestSamples component
+     * @default false
+     */
+    hideSamples?: boolean;
     /**
      * Shows only operation document without right column
      * @default false
@@ -126,6 +147,13 @@ interface BaseDocsProps {
    * @default undefined
    */
   nodeUnsupported?: NodeUnsupportedFn;
+
+  /**
+   * Allows to define renderers for vendor extensions
+   * @type {ExtensionAddonRenderer}
+   * @default undefined
+   */
+  renderExtensionAddon?: ExtensionAddonRenderer;
 }
 
 export interface DocsProps extends BaseDocsProps {
@@ -134,6 +162,7 @@ export interface DocsProps extends BaseDocsProps {
   useNodeForRefResolving?: boolean;
   refResolver?: ReferenceResolver;
   maxRefDepth?: number;
+  disableProps?: any;
 }
 
 export interface DocsComponentProps<T = unknown> extends BaseDocsProps {
@@ -141,16 +170,19 @@ export interface DocsComponentProps<T = unknown> extends BaseDocsProps {
    * The input data for the component to display.
    */
   data: T;
+  disableProps?: any;
 }
 
 export const Docs = React.memo<DocsProps>(
   ({
     nodeType,
     nodeData,
+    disableProps,
     useNodeForRefResolving = false,
     refResolver,
     maxRefDepth,
     nodeHasChanged,
+    renderExtensionAddon,
     ...commonProps
   }) => {
     const parsedNode = useParsedData(nodeType, nodeData);
@@ -160,7 +192,7 @@ export const Docs = React.memo<DocsProps>(
       return null;
     }
 
-    let elem = <ParsedDocs node={parsedNode} {...commonProps} />;
+    let elem = <ParsedDocs node={parsedNode} disableProps={disableProps} {...commonProps} />;
 
     if (useNodeForRefResolving) {
       elem = (
@@ -170,25 +202,31 @@ export const Docs = React.memo<DocsProps>(
       );
     }
 
-    return <ElementsOptionsProvider nodeHasChanged={nodeHasChanged}>{elem}</ElementsOptionsProvider>;
+    return (
+      <ElementsOptionsProvider nodeHasChanged={nodeHasChanged} renderExtensionAddon={renderExtensionAddon}>
+        {elem}
+      </ElementsOptionsProvider>
+    );
   },
 );
 
 export interface ParsedDocsProps extends BaseDocsProps {
   node: ParsedNode;
+  disableProps?: any;
 }
 
-export const ParsedDocs = ({ node, nodeUnsupported, ...commonProps }: ParsedDocsProps) => {
+export const ParsedDocs = ({ node, nodeUnsupported, disableProps, ...commonProps }: ParsedDocsProps) => {
   switch (node.type) {
     case 'article':
       return <Article data={node.data} {...commonProps} />;
     case 'http_operation':
     case 'http_webhook':
-      return <HttpOperation data={node.data} {...commonProps} />;
+      return <HttpOperation data={node.data} disableProps={disableProps} {...commonProps} />;
+
     case 'http_service':
       return <HttpService data={node.data} {...commonProps} />;
     case 'model':
-      return <Model data={node.data} {...commonProps} />;
+      return <Model data={node.data} disableProps={disableProps} {...commonProps} />;
     default:
       nodeUnsupported?.('invalidType');
       return null;

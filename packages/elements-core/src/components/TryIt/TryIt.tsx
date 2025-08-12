@@ -1,5 +1,5 @@
-import { Box, Button, HStack, Icon, Panel, useThemeIsDark } from '@stoplight/mosaic';
-import type { IHttpEndpointOperation, IServer } from '@stoplight/types';
+import { Box, Button, HStack, Icon, ITextColorProps, Panel, useThemeIsDark } from '@stoplight/mosaic';
+import type { HttpMethod, IHttpEndpointOperation, IServer } from '@stoplight/types';
 import { Request as HarRequest } from 'har-format';
 import { useAtom } from 'jotai';
 import * as React from 'react';
@@ -7,11 +7,12 @@ import * as React from 'react';
 import { HttpMethodColors } from '../../constants';
 import { isHttpOperation, isHttpWebhookOperation } from '../../utils/guards';
 import { getServersToDisplay, getServerVariables } from '../../utils/http-spec/IServer';
-import { RequestSamples } from '../RequestSamples';
+import { extractCodeSamples, RequestSamples } from '../RequestSamples';
 import { TryItAuth } from './Auth/Auth';
 import { usePersistedSecuritySchemeWithValues } from './Auth/authentication-utils';
+import { BinaryBody } from './Body/BinaryBody';
 import { FormDataBody } from './Body/FormDataBody';
-import { useBodyParameterState } from './Body/request-body-utils';
+import { BodyParameterValues, useBodyParameterState } from './Body/request-body-utils';
 import { RequestBody } from './Body/RequestBody';
 import { useTextRequestBodyState } from './Body/useTextRequestBodyState';
 import { buildFetchRequest, buildHarRequest } from './build-request';
@@ -57,6 +58,11 @@ export interface TryItProps {
   embeddedInMd?: boolean;
 
   /**
+   * True when TryIt Panel should be hidden
+   */
+  hideTryItPanel?: boolean;
+
+  /**
    * Fetch credentials policy for TryIt component
    * For more information: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
    * @default "omit"
@@ -78,6 +84,7 @@ export const TryIt: React.FC<TryItProps> = ({
   onRequestChange,
   requestBodyIndex,
   embeddedInMd = false,
+  hideTryItPanel = false,
   tryItCredentialsPolicy,
   corsProxy,
 }) => {
@@ -98,7 +105,10 @@ export const TryIt: React.FC<TryItProps> = ({
   const [bodyParameterValues, setBodyParameterValues, isAllowedEmptyValues, setAllowedEmptyValues, formDataState] =
     useBodyParameterState(mediaTypeContent);
 
-  const [textRequestBody, setTextRequestBody] = useTextRequestBodyState(mediaTypeContent);
+  const [textRequestBody, setTextRequestBody] = useTextRequestBodyState(
+    mediaTypeContent,
+    !isHttpWebhookOperation(httpOperation),
+  );
 
   const [operationAuthValue, setOperationAuthValue, setCurrentScheme] = usePersistedSecuritySchemeWithValues();
 
@@ -115,13 +125,17 @@ export const TryIt: React.FC<TryItProps> = ({
     parameter => parameter.required && !parameterValuesWithDefaults[parameter.name],
   );
 
+  const customCodeSamples = extractCodeSamples(httpOperation);
+
   const getValues = () =>
     Object.keys(bodyParameterValues)
       .filter(param => !isAllowedEmptyValues[param] ?? true)
-      .reduce((previousValue, currentValue) => {
+      .reduce<BodyParameterValues>((previousValue, currentValue) => {
         previousValue[currentValue] = bodyParameterValues[currentValue];
         return previousValue;
       }, {});
+
+  const getBinaryValue = () => bodyParameterValues.file;
 
   React.useEffect(() => {
     const currentUrl = chosenServer?.url;
@@ -143,7 +157,11 @@ export const TryIt: React.FC<TryItProps> = ({
         parameterValues: parameterValuesWithDefaults,
         serverVariableValues,
         httpOperation,
-        bodyInput: formDataState.isFormDataBody ? getValues() : textRequestBody,
+        bodyInput: formDataState.isFormDataBody
+          ? getValues()
+          : formDataState.isBinaryBody
+          ? getBinaryValue()
+          : textRequestBody,
         auth: operationAuthValue,
         ...(isMockingEnabled && { mockData: getMockData(mockUrl, httpOperation, mockingOptions) }),
         chosenServer,
@@ -187,12 +205,17 @@ export const TryIt: React.FC<TryItProps> = ({
     try {
       setLoading(true);
       const mockData = isMockingEnabled ? getMockData(mockUrl, httpOperation, mockingOptions) : undefined;
+
       const request = await buildFetchRequest({
         parameterValues: parameterValuesWithDefaults,
         serverVariableValues,
         httpOperation,
         mediaTypeContent,
-        bodyInput: formDataState.isFormDataBody ? getValues() : textRequestBody,
+        bodyInput: formDataState.isFormDataBody
+          ? getValues()
+          : formDataState.isBinaryBody
+          ? getBinaryValue()
+          : textRequestBody,
         mockData,
         auth: operationAuthValue,
         chosenServer,
@@ -267,6 +290,12 @@ export const TryIt: React.FC<TryItProps> = ({
             onChangeParameterAllow={setAllowedEmptyValues}
             isAllowedEmptyValues={isAllowedEmptyValues}
           />
+        ) : formDataState.isBinaryBody ? (
+          <BinaryBody
+            specification={formDataState.bodySpecification}
+            values={bodyParameterValues}
+            onChangeValues={setBodyParameterValues}
+          />
         ) : mediaTypeContent ? (
           <RequestBody
             examples={mediaTypeContent.examples ?? []}
@@ -318,7 +347,12 @@ export const TryIt: React.FC<TryItProps> = ({
     tryItPanelElem = (
       <Panel isCollapsible={false} p={0} className="TryItPanel">
         <Panel.Titlebar bg="canvas-300">
-          <Box fontWeight="bold" color={!isDark ? HttpMethodColors[httpOperation.method] : undefined}>
+          <Box
+            fontWeight="bold"
+            color={
+              !isDark ? (HttpMethodColors[httpOperation.method as HttpMethod] as ITextColorProps['color']) : undefined
+            }
+          >
             {httpOperation.method.toUpperCase()}
           </Box>
           <Box fontWeight="medium" ml={2} textOverflow="truncate" overflowX="hidden">
@@ -331,7 +365,7 @@ export const TryIt: React.FC<TryItProps> = ({
     );
   } else {
     tryItPanelElem = (
-      <Box className="TryItPanel" bg="canvas-100" rounded="lg">
+      <Box className="TryItPanel" bg="canvas-100">
         {tryItPanelContents}
       </Box>
     );
@@ -339,8 +373,10 @@ export const TryIt: React.FC<TryItProps> = ({
 
   return (
     <Box rounded="lg" overflowY="hidden">
-      {tryItPanelElem}
-      {requestData && embeddedInMd && <RequestSamples request={requestData} embeddedInMd />}
+      {hideTryItPanel ? null : tryItPanelElem}
+      {requestData && embeddedInMd && (
+        <RequestSamples request={requestData} customCodeSamples={customCodeSamples} embeddedInMd />
+      )}
       {response && !('error' in response) && <TryItResponse response={response} />}
       {response && 'error' in response && <ResponseError state={response} />}
     </Box>

@@ -1,6 +1,15 @@
-import { Box, Flex, Heading, HStack, NodeAnnotation, useThemeIsDark, VStack } from '@stoplight/mosaic';
+import {
+  Box,
+  Flex,
+  Heading,
+  HStack,
+  IBackgroundColorProps,
+  NodeAnnotation,
+  useThemeIsDark,
+  VStack,
+} from '@stoplight/mosaic';
 import { withErrorBoundary } from '@stoplight/react-error-boundary';
-import { IHttpEndpointOperation, IHttpOperation } from '@stoplight/types';
+import { HttpMethod, IHttpEndpointOperation, IHttpOperation } from '@stoplight/types';
 import cn from 'classnames';
 import { useAtomValue } from 'jotai/utils';
 import * as React from 'react';
@@ -14,20 +23,22 @@ import { isHttpOperation, isHttpWebhookOperation } from '../../../utils/guards';
 import { MarkdownViewer } from '../../MarkdownViewer';
 import { chosenServerAtom, TryItWithRequestSamples } from '../../TryIt';
 import { DocsComponentProps } from '..';
+import { NodeVendorExtensions } from '../NodeVendorExtensions';
 import { TwoColumnLayout } from '../TwoColumnLayout';
 import { DeprecatedBadge, InternalBadge } from './Badges';
 import { Callbacks } from './Callbacks';
 import { Request } from './Request';
 import { Responses } from './Responses';
 
-export type HttpOperationProps = DocsComponentProps<IHttpEndpointOperation>;
+export type HttpOperationProps = DocsComponentProps<IHttpEndpointOperation> & {
+  disableProps?: Record<string, any>;
+};
 
 const HttpOperationComponent = React.memo<HttpOperationProps>(
-  ({ className, data: unresolvedData, layoutOptions, tryItCredentialsPolicy, tryItCorsProxy }) => {
+  ({ className, data: unresolvedData, layoutOptions, tryItCredentialsPolicy, tryItCorsProxy, disableProps }) => {
     const { nodeHasChanged } = useOptionsCtx();
     const data = useResolvedObject(unresolvedData) as IHttpEndpointOperation;
     const { ref: layoutRef, isCompact } = useIsCompact(layoutOptions);
-
     const mocking = React.useContext(MockingContext);
     const isDeprecated = !!data.deprecated;
     const isInternal = !!data.internal;
@@ -69,6 +80,8 @@ const HttpOperationComponent = React.memo<HttpOperationProps>(
         responseStatusCode={responseStatusCode}
         requestBodyIndex={requestBodyIndex}
         hideTryIt={layoutOptions?.hideTryIt}
+        hideTryItPanel={layoutOptions?.hideTryItPanel}
+        hideSamples={layoutOptions?.hideSamples}
         tryItCredentialsPolicy={tryItCredentialsPolicy}
         mockUrl={mocking.hideMocking ? undefined : mocking.mockUrl}
         corsProxy={tryItCorsProxy}
@@ -84,8 +97,15 @@ const HttpOperationComponent = React.memo<HttpOperationProps>(
             <NodeAnnotation change={descriptionChanged} />
           </Box>
         )}
+        <NodeVendorExtensions data={data} />
 
-        <Request onChange={setTextRequestBodyIndex} operation={data} />
+        <Request
+          onChange={setTextRequestBodyIndex}
+          operation={data}
+          hideSecurityInfo={layoutOptions?.hideSecurityInfo}
+          isHttpWebhookOperation={isHttpWebhookOperation(data)}
+          disableProps={disableProps?.request}
+        />
 
         {data.responses && (
           <Responses
@@ -93,11 +113,10 @@ const HttpOperationComponent = React.memo<HttpOperationProps>(
             onMediaTypeChange={setResponseMediaType}
             onStatusCodeChange={setResponseStatusCode}
             isCompact={isCompact}
+            disableProps={disableProps?.response}
           />
         )}
-
         {data.callbacks?.length ? <Callbacks callbacks={data.callbacks} isCompact={isCompact} /> : null}
-
         {isCompact && tryItPanel}
       </VStack>
     );
@@ -142,13 +161,13 @@ function MethodPathInner({ method, path, chosenServerUrl }: MethodPathProps & { 
 
   const pathElem = (
     <Flex overflowX="hidden" fontSize="lg" userSelect="all">
-      <Box dir="rtl" color="muted" textOverflow="truncate" overflowX="hidden">
-        <Box as="span" dir="ltr" style={{ unicodeBidi: 'bidi-override' }}>
+      <Box dir="ltr" textOverflow="truncate" overflowX="hidden">
+        <Box as="span" dir="ltr" color="muted" style={{ unicodeBidi: 'bidi-override' }}>
           {chosenServerUrl}
         </Box>
-      </Box>
-      <Box fontWeight="semibold" flex={1}>
-        {path}
+        <Box as="span" fontWeight="semibold" flex={1}>
+          {path}
+        </Box>
       </Box>
     </Flex>
   );
@@ -170,7 +189,7 @@ function MethodPathInner({ method, path, chosenServerUrl }: MethodPathProps & { 
         py={1}
         px={2.5}
         rounded="lg"
-        bg={!isDark ? HttpMethodColors[method] : 'canvas-100'}
+        bg={!isDark ? (HttpMethodColors[method as HttpMethod] as IBackgroundColorProps['bg']) : 'canvas-100'}
         color={!isDark ? 'on-primary' : 'body'}
         fontSize="lg"
         fontWeight="semibold"

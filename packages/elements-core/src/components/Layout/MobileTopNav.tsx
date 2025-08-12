@@ -26,18 +26,7 @@ export const MobileTopNav = ({
     setIsSidebarOpen(false);
   };
   return (
-    <Flex
-      className="TopNav--mosaic"
-      alignItems="center"
-      h="3xl"
-      pl={4}
-      pr={4}
-      bg="canvas"
-      borderB
-      pos="fixed"
-      w="full"
-      zIndex={20}
-    >
+    <Flex className="TopNav--mosaic" alignItems="center" h="3xl" pl={4} pr={4} bg="canvas" borderB pos="fixed" w="full">
       <Flex data-test="mobile-top-nav" w="full" alignItems="center" justifyContent="between">
         <Button data-test="show-left-sidebar-btn" onPress={() => setIsSidebarOpen(true)} appearance="minimal">
           <Icon size="lg" icon={faBars} />
@@ -45,7 +34,7 @@ export const MobileTopNav = ({
         <NavHeading heading={name} />
       </Flex>
 
-      <Drawer isOpen={isSidebarOpen} position="left">
+      <Drawer isOpen={isSidebarOpen} position="left" onClose={() => setIsSidebarOpen(false)} w="5/6">
         <Flex justifyContent="end">
           <Button
             className="sl-mr-4 sl-mt-2"
@@ -56,14 +45,16 @@ export const MobileTopNav = ({
             <Icon size="lg" icon={faX} />
           </Button>
         </Flex>
-        <Sidebar
-          name={name}
-          logo={logo}
-          tree={tree}
-          pathname={pathname}
-          onTocClick={() => handleTocClick()}
-          isInResponsiveMode={true}
-        />
+        <Box tabIndex={-1}>
+          <Sidebar
+            name={name}
+            logo={logo}
+            tree={tree}
+            pathname={pathname}
+            onTocClick={handleTocClick}
+            isInResponsiveMode={true}
+          />
+        </Box>
       </Drawer>
     </Flex>
   );

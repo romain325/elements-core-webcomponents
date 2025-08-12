@@ -6,7 +6,7 @@ import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { LogoProps } from '../../types';
 import { Logo } from '../Logo';
 import { PoweredByLink } from '../PoweredByLink';
-import type { TableOfContentsItem } from '../TableOfContents';
+import type { CustomLinkComponent, TableOfContentsItem } from '../TableOfContents';
 import { TableOfContents } from '../TableOfContents';
 import { MobileTopNav } from './MobileTopNav';
 
@@ -42,7 +42,7 @@ export const ResponsiveSidebarLayout = React.forwardRef<HTMLDivElement, Responsi
 
     return (
       <Flex ref={ref} className="sl-elements-api" pin h="full">
-        {!isResponsiveLayoutEnabled ? (
+        {!isResponsiveLayoutEnabled && (
           <Flex
             ref={sidebarRef}
             onMouseDown={(e: React.MouseEvent<HTMLElement>) => e.preventDefault()}
@@ -80,8 +80,6 @@ export const ResponsiveSidebarLayout = React.forwardRef<HTMLDivElement, Responsi
               style={{ width: '1em', flexBasis: '6px', cursor: 'ew-resize' }}
             />
           </Flex>
-        ) : (
-          <MobileTopNav onTocClick={onTocClick!} name={name} logo={logo} tree={tree!} pathname={pathname} />
         )}
 
         <Box ref={scrollRef} bg="canvas" px={!isResponsiveLayoutEnabled ? 24 : 6} flex={1} w="full" overflowY="auto">
@@ -89,6 +87,10 @@ export const ResponsiveSidebarLayout = React.forwardRef<HTMLDivElement, Responsi
             {children}
           </Box>
         </Box>
+
+        {isResponsiveLayoutEnabled && (
+          <MobileTopNav onTocClick={onTocClick!} name={name} logo={logo} tree={tree!} pathname={pathname} />
+        )}
       </Flex>
     );
   },
@@ -127,7 +129,7 @@ export const Sidebar = ({
         <TableOfContents
           tree={tree}
           activeId={pathname}
-          Link={Link}
+          Link={Link as CustomLinkComponent}
           onLinkClick={onTocClick}
           isInResponsiveMode={isInResponsiveMode}
         />

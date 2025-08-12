@@ -15,7 +15,13 @@ import { Parameters } from './Parameters';
 
 interface IRequestProps {
   operation: IHttpEndpointOperation;
+  hideSecurityInfo?: boolean;
   onChange?: (requestBodyIndex: number) => void;
+  isHttpWebhookOperation?: boolean;
+  disableProps?: Array<{
+    location: string;
+    paths: Array<{ path: string }>;
+  }>;
 }
 
 export const Request: React.FunctionComponent<IRequestProps> = ({
@@ -30,7 +36,10 @@ export const Request: React.FunctionComponent<IRequestProps> = ({
     } = {},
     security,
   },
+  hideSecurityInfo,
   onChange,
+  isHttpWebhookOperation = false,
+  disableProps,
 }) => {
   if (!request || typeof request !== 'object') return null;
 
@@ -50,7 +59,7 @@ export const Request: React.FunctionComponent<IRequestProps> = ({
     <VStack spacing={8}>
       <SectionTitle title="Request" />
 
-      <SecuritySchemes schemes={securitySchemes} parentId={operation.id} />
+      {hideSecurityInfo ? null : <SecuritySchemes schemes={securitySchemes} parentId={operation.id} />}
 
       {pathParams.length > 0 && (
         <VStack spacing={5}>
@@ -80,7 +89,14 @@ export const Request: React.FunctionComponent<IRequestProps> = ({
         </VStack>
       )}
 
-      {body && <Body onChange={onChange} body={body} />}
+      {body && (
+        <Body
+          onChange={onChange}
+          body={body}
+          isHttpWebhookOperation={isHttpWebhookOperation}
+          disableProps={disableProps}
+        />
+      )}
     </VStack>
   );
 };
