@@ -1,6 +1,6 @@
 {
   "name": "@romain325/elements-core-webcomponents",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "sideEffects": [
     "web-components.min.js",
     "src/web-components/**",
@@ -33,7 +33,7 @@
     "build": "yarn build.react",
     "postbuild": "yarn build.styles",
     "build.react": "sl-scripts bundle",
-    "build.webcomponents": "webpack -c ./web-components.config.js",
+    "build.webcomponents": "webpack -c ./web-components.config.cjs",
     "build.styles": "postcss src/styles.css -o dist/styles.min.css && cp src/core.css dist",
     "build.docs": "storybook build -o dist-storybook",
     "commit": "git-cz",
@@ -114,7 +114,8 @@
     "react-test-renderer": "^16.8.0",
     "resolve-url-loader": "^5.0.0",
     "storybook": "next",
-    "style-loader": "^3.3.3"
+    "style-loader": "^3.3.3",
+    "webpack-cli": "^6.0.1"
   },
   "publishConfig": {
     "directory": "dist"
