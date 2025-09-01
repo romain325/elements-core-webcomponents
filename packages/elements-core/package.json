@@ -1,6 +1,6 @@
 {
   "name": "@romain325/elements-core-webcomponents",
-  "version": "0.0.1",
+  "version": "1.0.0-SNAPSHOT",
   "sideEffects": [
     "web-components.min.js",
     "src/web-components/**",
